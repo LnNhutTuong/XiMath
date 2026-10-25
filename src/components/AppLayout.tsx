@@ -1,5 +1,5 @@
-import { NavLink, Outlet } from 'react-router-dom'
-import { navigationItems } from '../data/navigation'
+import { NavLink, Outlet } from "react-router-dom";
+import { navigationItems } from "../data/navigation";
 
 function Brand() {
   return (
@@ -12,36 +12,38 @@ function Brand() {
         🐻
       </span>
       <span className="leading-tight">
-        <span className="block text-[15px] font-extrabold tracking-tight text-slate-800">
-          Bé Vui Học Toán
+        <span className="block text-[22px] font-extrabold tracking-tight text-slate-800">
+          XiMath
         </span>
         <span className="mt-1 block text-xs font-medium text-slate-400">
-          Mỗi ngày một niềm vui
+          I love At00
         </span>
       </span>
     </NavLink>
-  )
+  );
 }
 
 function Navigation({ mobile = false }: { mobile?: boolean }) {
   return (
     <nav
-      aria-label={mobile ? 'Điều hướng chính trên điện thoại' : 'Điều hướng chính'}
-      className={mobile ? 'flex gap-2 overflow-x-auto px-4 pb-3' : 'space-y-1'}
+      aria-label={
+        mobile ? "Điều hướng chính trên điện thoại" : "Điều hướng chính"
+      }
+      className={mobile ? "flex gap-2 overflow-x-auto px-4 pb-3" : "space-y-1"}
     >
       {navigationItems.map(({ icon: Icon, label, to }) => (
         <NavLink
           key={to}
           to={to}
-          end={to === '/'}
+          end={to === "/"}
           className={({ isActive }) =>
             [
-              'flex shrink-0 items-center gap-3 rounded-2xl font-semibold outline-none transition-colors focus-visible:ring-4 focus-visible:ring-emerald-200',
-              mobile ? 'px-4 py-2.5 text-sm' : 'px-4 py-3 text-[15px]',
+              "flex shrink-0 items-center gap-3 rounded-2xl font-semibold outline-none transition-colors focus-visible:ring-4 focus-visible:ring-emerald-200",
+              mobile ? "px-4 py-2.5 text-sm" : "px-4 py-3 text-[15px]",
               isActive
-                ? 'bg-emerald-50 text-emerald-700'
-                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800',
-            ].join(' ')
+                ? "bg-emerald-50 text-emerald-700"
+                : "text-slate-500 hover:bg-slate-50 hover:text-slate-800",
+            ].join(" ")
           }
         >
           <Icon size={19} strokeWidth={2.2} aria-hidden="true" />
@@ -49,7 +51,7 @@ function Navigation({ mobile = false }: { mobile?: boolean }) {
         </NavLink>
       ))}
     </nav>
-  )
+  );
 }
 
 export default function AppLayout() {
@@ -65,7 +67,9 @@ export default function AppLayout() {
           <div className="mb-2 text-2xl" aria-hidden="true">
             🌈
           </div>
-          <p className="text-sm font-bold text-slate-700">Con học thật vui nhé!</p>
+          <p className="text-sm font-bold text-slate-700">
+            Em học thật vui nhé!
+          </p>
           <p className="mt-1 text-xs leading-5 text-slate-500">
             Mỗi phép tính nhỏ là một bước tiến lớn.
           </p>
@@ -84,5 +88,5 @@ export default function AppLayout() {
         </main>
       </div>
     </div>
-  )
+  );
 }

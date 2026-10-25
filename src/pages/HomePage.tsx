@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useProfile } from '../profile/useProfile'
 
 type PracticeCard = {
   title: string
@@ -73,6 +74,7 @@ const dateFormatter = new Intl.DateTimeFormat('vi-VN', {
 
 export default function HomePage() {
   const [now] = useState(() => new Date())
+  const { name } = useProfile()
   const today = dateFormatter.format(now)
   const capitalizedDate = today.charAt(0).toLocaleUpperCase('vi-VN') + today.slice(1)
 
@@ -85,7 +87,7 @@ export default function HomePage() {
             {capitalizedDate}
           </p>
           <h1 className="text-[28px] font-extrabold tracking-tight text-slate-800 sm:text-3xl">
-            Chào con, nhà toán học nhí! <span aria-hidden="true">👋</span>
+            Chào em, {name}! <span aria-hidden="true">👋</span>
           </h1>
           <p className="mt-2 text-sm leading-6 text-slate-500 sm:text-base">
             Hôm nay mình cùng học thêm điều mới nhé.
@@ -110,7 +112,7 @@ export default function HomePage() {
             Sẵn sàng chinh phục thử thách hôm nay?
           </h2>
           <p className="mt-3 max-w-md text-sm leading-6 text-slate-600 sm:text-base">
-            30 câu đố vui đang chờ con khám phá. Cùng bắt đầu nào!
+            30 câu đố vui đang chờ em khám phá. Cùng bắt đầu nào!
           </p>
           <Link
             to="/daily"
@@ -140,7 +142,7 @@ export default function HomePage() {
         <div className="mb-4 flex items-end justify-between gap-3">
           <div>
             <h2 id="practice-heading" className="text-xl font-extrabold text-slate-800">
-              Chọn điều con muốn học
+              Chọn điều em muốn học
             </h2>
             <p className="mt-1 text-sm text-slate-400">Chạm vào một thẻ để bắt đầu nhé!</p>
           </div>
@@ -187,7 +189,7 @@ export default function HomePage() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="font-extrabold text-slate-800">Tiến độ học tập</h2>
-              <p className="mt-1 text-sm text-slate-400">Hành trình của con</p>
+              <p className="mt-1 text-sm text-slate-400">Hành trình của em</p>
             </div>
             <span className="grid size-10 place-items-center rounded-2xl bg-[#edf6ff] text-[#5790d2]">
               <TrendingUp size={20} aria-hidden="true" />
@@ -215,7 +217,7 @@ export default function HomePage() {
         <div className="rounded-[24px] border border-slate-100 bg-white p-5 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-extrabold text-slate-800">Thành tích của con</h2>
+              <h2 className="font-extrabold text-slate-800">Thành tích của em</h2>
               <p className="mt-1 text-sm text-slate-400">Những chiếc huy hiệu đáng yêu</p>
             </div>
             <span className="grid size-10 place-items-center rounded-2xl bg-[#fff5df] text-[#e5a93a]">
@@ -227,7 +229,7 @@ export default function HomePage() {
               🏅
             </span>
             <p className="text-sm leading-6 text-slate-500">
-              Huy hiệu đầu tiên đang chờ con. Cố lên nhé!
+              Huy hiệu đầu tiên đang chờ em. Cố lên nhé!
             </p>
           </div>
           <div className="mt-4 flex items-center gap-2 text-xs font-semibold text-slate-400">
