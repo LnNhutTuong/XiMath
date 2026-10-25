@@ -22,5 +22,7 @@ export type QuestionGeneratorConfig = {
   operandB: OperandRange
   maxResult?: number
   allowNegative?: boolean
+  carryMode?: 'with-carry' | 'without-carry'
+  borrowMode?: 'with-borrow' | 'without-borrow'
   difficulty?: QuestionDifficulty
 }

@@ -96,6 +96,45 @@ describe('generateQuestions', () => {
     )
   })
 
+  it('can restrict two-digit addition to questions with or without carrying', () => {
+    const common = {
+      ...baseConfig,
+      count: 15,
+      operandA: { min: 10, max: 99 },
+      operandB: { min: 10, max: 99 },
+      maxResult: 198,
+    }
+    const withoutCarry = generateQuestions({ ...common, carryMode: 'without-carry' })
+    const withCarry = generateQuestions({ ...common, carryMode: 'with-carry' })
+
+    expect(
+      withoutCarry.every(({ operandA, operandB }) => (operandA % 10) + (operandB % 10) < 10),
+    ).toBe(true)
+    expect(
+      withCarry.every(({ operandA, operandB }) => (operandA % 10) + (operandB % 10) >= 10),
+    ).toBe(true)
+  })
+
+  it('can restrict subtraction to questions with or without borrowing', () => {
+    const common = {
+      ...baseConfig,
+      count: 15,
+      operators: ['-'] as const,
+      operandA: { min: 10, max: 99 },
+      operandB: { min: 10, max: 99 },
+      maxResult: 89,
+    }
+    const withoutBorrow = generateQuestions({ ...common, borrowMode: 'without-borrow' })
+    const withBorrow = generateQuestions({ ...common, borrowMode: 'with-borrow' })
+
+    expect(
+      withoutBorrow.every(({ operandA, operandB }) => operandA % 10 >= operandB % 10),
+    ).toBe(true)
+    expect(
+      withBorrow.every(({ operandA, operandB }) => operandA % 10 < operandB % 10),
+    ).toBe(true)
+  })
+
   it('supports mixed operations and sets the requested difficulty', () => {
     const questions = generateQuestions({
       ...baseConfig,

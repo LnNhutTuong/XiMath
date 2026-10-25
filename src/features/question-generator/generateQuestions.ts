@@ -39,6 +39,12 @@ function validateConfig(config: QuestionGeneratorConfig): void {
   ) {
     throw new RangeError('Giới hạn kết quả phải là số nguyên không âm.')
   }
+  if (config.carryMode && (config.operators.length !== 1 || config.operators[0] !== '+')) {
+    throw new RangeError('Chỉ phép cộng mới có thể chọn chế độ nhớ.')
+  }
+  if (config.borrowMode && (config.operators.length !== 1 || config.operators[0] !== '-')) {
+    throw new RangeError('Chỉ phép trừ mới có thể chọn chế độ mượn.')
+  }
   assertRange(config.operandA, 'Toán hạng thứ nhất')
   assertRange(config.operandB, 'Toán hạng thứ hai')
 }
@@ -144,6 +150,14 @@ function isValidCandidate(candidate: Candidate, config: QuestionGeneratorConfig)
   ) {
     return false
   }
+  if (config.carryMode) {
+    const hasCarry = (candidate.operandA % 10) + (candidate.operandB % 10) >= 10
+    if (hasCarry !== (config.carryMode === 'with-carry')) return false
+  }
+  if (config.borrowMode) {
+    const hasBorrow = candidate.operandA % 10 < candidate.operandB % 10
+    if (hasBorrow !== (config.borrowMode === 'with-borrow')) return false
+  }
   return true
 }
 
@@ -192,9 +206,10 @@ function createRandomCandidate(
   for (let operandA = operandARange.min; operandA <= operandARange.max; operandA += 1) {
     const operandBRange = validOperandBRange(operator, operandA, config)
     if (!operandBRange) continue
-    const operandB = operandBRange.min
-    const candidate = makeCandidate(operator, operandA, operandB, difficulty)
-    if (isValidCandidate(candidate, config)) return candidate
+    for (let operandB = operandBRange.min; operandB <= operandBRange.max; operandB += 1) {
+      const candidate = makeCandidate(operator, operandA, operandB, difficulty)
+      if (isValidCandidate(candidate, config)) return candidate
+    }
   }
 
   throw new RangeError(`Không thể tạo phép ${operator} trong phạm vi đã chọn.`)
