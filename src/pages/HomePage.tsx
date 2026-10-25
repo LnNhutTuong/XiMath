@@ -2,6 +2,7 @@ import {
   ArrowRight,
   Award,
   CalendarDays,
+  Calculator,
   Check,
   ChevronRight,
   Flame,
@@ -15,6 +16,7 @@ import {
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useProfile } from '../profile/useProfile'
+import { useLearning } from '../services/useLearning'
 
 type PracticeCard = {
   title: string
@@ -55,6 +57,15 @@ const practiceCards: PracticeCard[] = [
     iconStyle: 'bg-[#e1dcff] text-[#806bdd]',
   },
   {
+    title: 'Phép chia',
+    subtitle: 'Chia đều thành từng nhóm',
+    to: '/division',
+    icon: Calculator,
+    emoji: '🍰',
+    style: 'bg-[#fff0f3] hover:bg-[#ffe8ed]',
+    iconStyle: 'bg-[#ffdee6] text-[#dd6b87]',
+  },
+  {
     title: 'Bảng cửu chương',
     subtitle: 'Học thuộc lòng dễ dàng',
     to: '/tables',
@@ -75,6 +86,14 @@ const dateFormatter = new Intl.DateTimeFormat('vi-VN', {
 export default function HomePage() {
   const [now] = useState(() => new Date())
   const { name } = useProfile()
+  const { state, streak } = useLearning()
+  const completedAttempts = state.attempts.length
+  const totalQuestions = state.attempts.reduce((sum, attempt) => sum + attempt.questionCount, 0)
+  const totalCorrect = state.attempts.reduce((sum, attempt) => sum + attempt.correctCount, 0)
+  const accuracy = totalQuestions ? Math.round((totalCorrect / totalQuestions) * 100) : 0
+  const hasPerfectAttempt = state.attempts.some(
+    (attempt) => attempt.correctCount === attempt.questionCount,
+  )
   const today = dateFormatter.format(now)
   const capitalizedDate = today.charAt(0).toLocaleUpperCase('vi-VN') + today.slice(1)
 
@@ -126,7 +145,7 @@ export default function HomePage() {
           className="pointer-events-none absolute -right-5 -top-5 hidden size-[310px] place-items-center rounded-full bg-white/45 text-[150px] sm:grid lg:right-10 lg:top-1/2 lg:-translate-y-1/2"
           aria-hidden="true"
         >
-          🦊
+            <img src="../../public/Usagi.ico" alt="Usagi" />
           <span className="absolute right-1 top-12 rotate-12 text-4xl">✨</span>
           <span className="absolute bottom-12 left-3 -rotate-12 text-4xl">🌟</span>
         </div>
@@ -158,7 +177,7 @@ export default function HomePage() {
             <Link
               key={to}
               to={to}
-              className={`group flex min-h-[156px] flex-col justify-between rounded-[24px] p-5 outline-none transition-colors focus-visible:ring-4 focus-visible:ring-emerald-200 ${style}`}
+              className={`group flex min-h-[156px] flex-col justify-between rounded-[24px] p-5 outline-none transition duration-200 hover:-translate-y-1 hover:shadow-md focus-visible:ring-4 focus-visible:ring-emerald-200 ${style}`}
             >
               <div className="flex items-start justify-between">
                 <span className={`grid size-11 place-items-center rounded-2xl ${iconStyle}`}>
@@ -197,21 +216,29 @@ export default function HomePage() {
           </div>
           <div className="mt-6 grid grid-cols-3 divide-x divide-slate-100">
             <div className="px-2 text-center">
-              <p className="text-2xl font-extrabold text-slate-800">0</p>
+              <p className="text-2xl font-extrabold text-slate-800">{completedAttempts}</p>
               <p className="mt-1 text-xs font-medium text-slate-400 sm:text-sm">Bài đã làm</p>
             </div>
             <div className="px-2 text-center">
-              <p className="text-2xl font-extrabold text-slate-800">0%</p>
+              <p className="text-2xl font-extrabold text-slate-800">{accuracy}%</p>
               <p className="mt-1 text-xs font-medium text-slate-400 sm:text-sm">Trả lời đúng</p>
             </div>
             <div className="px-2 text-center">
-              <p className="text-2xl font-extrabold text-slate-800">0</p>
+              <p className="text-2xl font-extrabold text-slate-800">{streak}</p>
               <p className="mt-1 text-xs font-medium text-slate-400 sm:text-sm">Ngày liên tiếp</p>
             </div>
           </div>
           <p className="mt-5 rounded-2xl bg-slate-50 px-4 py-3 text-center text-sm font-medium text-slate-500">
-            Làm bài đầu tiên để bắt đầu hành trình nhé! 🌱
+            {completedAttempts
+              ? `Em đã hoàn thành ${totalQuestions} câu hỏi. Tiếp tục phát huy nhé! 🌱`
+              : 'Làm bài đầu tiên để bắt đầu hành trình nhé! 🌱'}
           </p>
+          <Link
+            to="/history"
+            className="mt-4 inline-flex min-h-10 items-center gap-1 rounded-xl px-3 text-sm font-bold text-emerald-700 outline-none hover:bg-emerald-50 focus-visible:ring-4 focus-visible:ring-emerald-200"
+          >
+            Xem nhật ký học tập <ChevronRight size={16} aria-hidden="true" />
+          </Link>
         </div>
 
         <div className="rounded-[24px] border border-slate-100 bg-white p-5 sm:p-6">
@@ -229,12 +256,14 @@ export default function HomePage() {
               🏅
             </span>
             <p className="text-sm leading-6 text-slate-500">
-              Huy hiệu đầu tiên đang chờ em. Cố lên nhé!
+              {hasPerfectAttempt
+                ? 'Huy hiệu Ngôi sao chăm chỉ đã được mở khóa! Cố lên nhé!'
+                : 'Huy hiệu đầu tiên đang chờ em. Cố lên nhé!'}
             </p>
           </div>
           <div className="mt-4 flex items-center gap-2 text-xs font-semibold text-slate-400">
             <Flame size={16} className="text-orange-400" aria-hidden="true" />
-            <span>Chuỗi học tập sẽ bắt đầu sau bài đầu tiên</span>
+            <span>{streak ? `Em đang học liên tiếp ${streak} ngày` : 'Chuỗi học tập sẽ bắt đầu sau bài đầu tiên'}</span>
             <Check size={15} className="ml-auto text-slate-300" aria-hidden="true" />
           </div>
         </div>

@@ -1,64 +1,43 @@
 import { useState } from 'react'
 import { Check, Dice5, Star, Table2 } from 'lucide-react'
+import { Button } from '../components/ui/button'
 import PracticeSession, {
   type AnswerMode,
 } from '../features/practice/PracticeSession'
 import { generateQuestions } from '../features/question-generator/generateQuestions'
 import type { Question } from '../features/question-generator/types'
+import { useLearning } from '../services/useLearning'
 
-const TABLES_KEY = 'ximath.learned-tables.v1'
 const tableNumbers = Array.from({ length: 9 }, (_, index) => index + 2)
 
-function readLearnedTables(): number[] {
-  try {
-    const stored = window.localStorage.getItem(TABLES_KEY)
-    if (!stored) return []
-    const parsed: unknown = JSON.parse(stored)
-    if (!Array.isArray(parsed)) return []
-    return parsed.filter(
-      (value): value is number =>
-        Number.isInteger(value) && value >= 2 && value <= 10,
-    )
-  } catch {
-    return []
-  }
-}
-
 export default function MultiplicationTablesPage() {
+  const { state, recordAttempt, toggleLearnedTable } = useLearning()
   const [selectedTable, setSelectedTable] = useState(2)
-  const [learnedTables, setLearnedTables] = useState(readLearnedTables)
   const [practiceQuestions, setPracticeQuestions] = useState<Question[] | null>(null)
-  const [answerMode, setAnswerMode] = useState<AnswerMode>('choice')
+  const [sessionKey, setSessionKey] = useState(0)
+  const [answerMode, setAnswerMode] = useState<AnswerMode>(state.settings.answerMode)
   const [mixedPractice, setMixedPractice] = useState(false)
   const [error, setError] = useState('')
-  const isLearned = learnedTables.includes(selectedTable)
+  const isLearned = state.learnedTables.includes(selectedTable)
 
   function toggleLearned() {
-    const next = isLearned
-      ? learnedTables.filter((table) => table !== selectedTable)
-      : [...learnedTables, selectedTable].sort((a, b) => a - b)
-    try {
-      window.localStorage.setItem(TABLES_KEY, JSON.stringify(next))
-      setLearnedTables(next)
-      setError('')
-    } catch {
-      setError('Chưa lưu được trạng thái đã học. Em hãy kiểm tra cài đặt bộ nhớ trình duyệt nhé.')
-    }
+    if (toggleLearnedTable(selectedTable)) setError('')
   }
 
   function startRandomPractice() {
     try {
       const questions = generateQuestions({
-        count: 10,
+        count: state.settings.questionCount,
         operators: ['×'],
         operandA: mixedPractice
           ? { min: 2, max: 10 }
           : { min: selectedTable, max: selectedTable },
         operandB: { min: 1, max: 10 },
-        maxResult: 100,
-        difficulty: 'practice',
+        maxResult: state.settings.maxResult,
+        difficulty: state.settings.difficulty,
       })
       setPracticeQuestions(questions)
+      setSessionKey((current) => current + 1)
       setError('')
     } catch (cause) {
       setError(
@@ -88,10 +67,15 @@ export default function MultiplicationTablesPage() {
           </button>
         </div>
         <PracticeSession
+          key={sessionKey}
           questions={practiceQuestions}
           answerMode={answerMode}
           practiceMode="practice"
           onRestart={startRandomPractice}
+          onComplete={(completedQuestions, answers) =>
+            recordAttempt('tables', completedQuestions, answers)
+          }
+          showFeedback={state.settings.showAnswersImmediately}
         />
       </div>
     )
@@ -117,7 +101,7 @@ export default function MultiplicationTablesPage() {
         <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-9">
           {tableNumbers.map((table) => {
             const selected = table === selectedTable
-            const learned = learnedTables.includes(table)
+            const learned = state.learnedTables.includes(table)
             return (
               <button
                 key={table}
@@ -146,7 +130,7 @@ export default function MultiplicationTablesPage() {
 
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm font-bold text-slate-500">
-            {learnedTables.length}/9 bảng đã đánh dấu đã học
+            {state.learnedTables.length}/9 bảng đã đánh dấu đã học
           </p>
           <button
             type="button"
@@ -219,14 +203,13 @@ export default function MultiplicationTablesPage() {
               <option value="input">Nhập kết quả</option>
             </select>
           </label>
-          <button
-            type="button"
+          <Button
             onClick={startRandomPractice}
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 font-bold text-white outline-none hover:bg-violet-700 focus-visible:ring-4 focus-visible:ring-violet-200"
+            variant="secondary"
           >
             <Dice5 size={18} aria-hidden="true" />
             Luyện ngẫu nhiên
-          </button>
+          </Button>
         </div>
       </section>
     </div>

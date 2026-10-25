@@ -11,6 +11,7 @@ type NumberRange = { min: number; max: number }
 
 const MAX_SAFE_RESULT = Number.MAX_SAFE_INTEGER
 const POOL_LIMIT = 50_000
+const MAX_QUESTION_COUNT = 100
 
 function assertRange(range: OperandRange, label: string): void {
   if (
@@ -24,13 +25,17 @@ function assertRange(range: OperandRange, label: string): void {
 }
 
 function validateConfig(config: QuestionGeneratorConfig): void {
-  if (!Number.isSafeInteger(config.count) || config.count < 1) {
-    throw new RangeError('Số câu hỏi phải là số nguyên lớn hơn 0.')
+  if (
+    !Number.isSafeInteger(config.count) ||
+    config.count < 1 ||
+    config.count > MAX_QUESTION_COUNT
+  ) {
+    throw new RangeError(`Số câu hỏi phải từ 1 đến ${MAX_QUESTION_COUNT}.`)
   }
   if (config.operators.length === 0) {
     throw new RangeError('Hãy chọn ít nhất một phép tính.')
   }
-  if (config.operators.some((operator) => !['+', '-', '×'].includes(operator))) {
+  if (config.operators.some((operator) => !['+', '-', '×', '÷'].includes(operator))) {
     throw new RangeError('Có phép tính không được hỗ trợ.')
   }
   if (
@@ -87,7 +92,7 @@ function validOperandARange(
       min = Math.max(min, operandB.min)
       max = Math.min(max, Math.min(MAX_SAFE_RESULT, operandB.max + limit))
     }
-  } else if (operandB.min > 0) {
+  } else if (operator === '×' && operandB.min > 0) {
     max = Math.min(max, Math.floor(limit / operandB.min))
   }
 
@@ -110,8 +115,10 @@ function validOperandBRange(
     min = Math.max(min, operandA - limit)
     if (!allowNegative) max = Math.min(max, operandA)
     else max = Math.min(max, Math.min(MAX_SAFE_RESULT, operandA + limit))
-  } else if (operandA > 0) {
+  } else if (operator === '×' && operandA > 0) {
     max = Math.min(max, Math.floor(limit / operandA))
+  } else if (operator === '÷') {
+    min = Math.max(min, 1)
   }
 
   return min <= max ? { min, max } : null
@@ -128,7 +135,9 @@ function makeCandidate(
       ? operandA + operandB
       : operator === '-'
         ? operandA - operandB
-        : operandA * operandB
+        : operator === '×'
+          ? operandA * operandB
+          : operandA / operandB
 
   return { operandA, operandB, operator, answer, difficulty }
 }
@@ -136,7 +145,7 @@ function makeCandidate(
 function candidateKey(candidate: Candidate): string {
   const { operandA, operandB, operator } = candidate
   const [first, second] =
-    operator === '-' || operandA <= operandB
+    operator === '-' || operator === '÷' || operandA <= operandB
       ? [operandA, operandB]
       : [operandB, operandA]
   return `${operator}:${first}:${second}`
@@ -145,6 +154,7 @@ function candidateKey(candidate: Candidate): string {
 function isValidCandidate(candidate: Candidate, config: QuestionGeneratorConfig): boolean {
   if (
     !Number.isSafeInteger(candidate.answer) ||
+    (candidate.operator === '÷' && candidate.operandB === 0) ||
     (!config.allowNegative && candidate.answer < 0) ||
     Math.abs(candidate.answer) > resultLimit(config)
   ) {

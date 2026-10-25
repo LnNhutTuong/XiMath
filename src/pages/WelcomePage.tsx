@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { useProfile } from '../profile/useProfile'
+import { MAX_NAME_LENGTH } from '../profile/profileStore'
 
 export default function WelcomePage() {
   const { error, saveName } = useProfile()
@@ -13,8 +14,11 @@ export default function WelcomePage() {
   return (
     <main className="grid min-h-screen place-items-center bg-gradient-to-br from-[#e5f8ec] via-[#f7f8fc] to-[#eaf3ff] px-4 py-8">
       <section className="w-full max-w-md rounded-[28px] border border-white bg-white p-6 shadow-[0_18px_55px_rgba(51,78,115,0.09)] sm:p-9">
-        <div className="mx-auto grid size-16 place-items-center rounded-[22px] bg-emerald-100 text-4xl" aria-hidden="true">
-          🐻
+        <div
+          className="mx-auto grid size-16 place-items-center rounded-[22px] bg-emerald-100 text-4xl"
+          aria-hidden="true"
+        >
+          <img src="/Usagi.png" alt="" className="size-12 object-contain" />
         </div>
         <p className="mt-6 text-center text-sm font-extrabold text-emerald-700">
           Chào mừng em đến với
@@ -27,22 +31,29 @@ export default function WelcomePage() {
         </p>
 
         <form className="mt-7 space-y-4" onSubmit={handleSubmit}>
-          <label className="block text-sm font-bold text-slate-700" htmlFor="learner-name">
+          <label
+            className="block text-sm font-bold text-slate-700"
+            htmlFor="learner-name"
+          >
             Tên em muốn dùng
           </label>
           <input
             id="learner-name"
             autoComplete="given-name"
             autoFocus
-            maxLength={24}
+            maxLength={MAX_NAME_LENGTH}
+            minLength={2}
             onChange={(event) => setName(event.target.value)}
-            placeholder="Ví dụ: Minh Anh"
+            placeholder="Ví dụ: Nhật Cường"
             required
             value={name}
             className="min-h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-base text-slate-800 outline-none placeholder:text-slate-400 focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100"
           />
           {error && (
-            <p role="alert" className="text-sm font-medium leading-5 text-rose-600">
+            <p
+              role="alert"
+              className="text-sm font-medium leading-5 text-rose-600"
+            >
               {error}
             </p>
           )}

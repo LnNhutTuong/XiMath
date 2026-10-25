@@ -1,4 +1,4 @@
-export type ArithmeticOperator = '+' | '-' | '×'
+export type ArithmeticOperator = '+' | '-' | '×' | '÷'
 export type QuestionDifficulty = 'warmup' | 'practice' | 'challenge'
 
 export type Question = {

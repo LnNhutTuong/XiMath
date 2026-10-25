@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { AlertCircle, Play, RotateCcw, Sparkles } from 'lucide-react'
+import { Button } from '../components/ui/button'
 import PracticeSession, {
   type AnswerMode,
   type PracticeMode,
@@ -11,8 +12,9 @@ import type {
   QuestionDifficulty,
   QuestionGeneratorConfig,
 } from '../features/question-generator/types'
+import { useLearning } from '../services/useLearning'
 
-type PracticeKind = 'addition' | 'subtraction' | 'multiplication'
+type PracticeKind = 'addition' | 'subtraction' | 'multiplication' | 'division'
 type AdditionLevel = 'under-10' | 'under-20' | 'no-carry' | 'with-carry' | 'advanced'
 type SubtractionLevel = 'any' | 'without-borrow' | 'with-borrow'
 
@@ -20,8 +22,8 @@ type ArithmeticPracticePageProps = {
   kind: PracticeKind
 }
 
-const countOptions = [5, 10, 15, 20, 30]
-const digitOptions = [1, 2, 3]
+const countOptions = [5, 10, 15, 20, 30, 50, 100]
+const digitOptions = [1, 2, 3, 4]
 
 const pageContent: Record<
   PracticeKind,
@@ -44,6 +46,12 @@ const pageContent: Record<
     description: 'Khám phá các nhóm bằng nhau qua phép nhân.',
     emoji: '⭐',
     operator: '×',
+  },
+  division: {
+    title: 'Luyện phép chia',
+    description: 'Chia thành các nhóm bằng nhau và tìm kết quả nhé!',
+    emoji: '🍰',
+    operator: '÷',
   },
 }
 
@@ -72,17 +80,24 @@ const selectClass =
 
 export default function ArithmeticPracticePage({ kind }: ArithmeticPracticePageProps) {
   const content = pageContent[kind]
+  const { state: learningState, recordAttempt } = useLearning()
+  const savedSettings = learningState.settings
   const [questions, setQuestions] = useState<Question[] | null>(null)
+  const [sessionKey, setSessionKey] = useState(0)
   const [error, setError] = useState('')
-  const [count, setCount] = useState(10)
-  const [answerMode, setAnswerMode] = useState<AnswerMode>('choice')
-  const [practiceMode, setPracticeMode] = useState<PracticeMode>('practice')
-  const [digitsA, setDigitsA] = useState(1)
-  const [digitsB, setDigitsB] = useState(1)
-  const [additionLevel, setAdditionLevel] = useState<AdditionLevel>('under-10')
+  const [count, setCount] = useState(savedSettings.questionCount)
+  const [answerMode, setAnswerMode] = useState<AnswerMode>(savedSettings.answerMode)
+  const [practiceMode, setPracticeMode] = useState<PracticeMode>(
+    savedSettings.showAnswersImmediately ? 'practice' : 'test',
+  )
+  const [digitsA, setDigitsA] = useState(savedSettings.operandDigitsA)
+  const [digitsB, setDigitsB] = useState(savedSettings.operandDigitsB)
+  const [additionLevel, setAdditionLevel] = useState<AdditionLevel>(
+    savedSettings.maxResult <= 10 ? 'under-10' : savedSettings.maxResult <= 20 ? 'under-20' : 'advanced',
+  )
   const [subtractionLevel, setSubtractionLevel] = useState<SubtractionLevel>('any')
-  const [maxResult, setMaxResult] = useState(200)
-  const [allowNegative, setAllowNegative] = useState(false)
+  const [maxResult, setMaxResult] = useState(savedSettings.maxResult)
+  const [allowNegative, setAllowNegative] = useState(savedSettings.allowNegative)
   const [table, setTable] = useState(0)
 
   function buildConfig(): QuestionGeneratorConfig {
@@ -91,7 +106,7 @@ export default function ArithmeticPracticePage({ kind }: ArithmeticPracticePageP
       operators: [content.operator],
       operandA: operandRange(digitsA),
       operandB: operandRange(digitsB),
-      difficulty: (count <= 10 ? 'warmup' : count <= 20 ? 'practice' : 'challenge') as QuestionDifficulty,
+      difficulty: savedSettings.difficulty as QuestionDifficulty,
     }
 
     if (kind === 'addition') {
@@ -134,6 +149,13 @@ export default function ArithmeticPracticePage({ kind }: ArithmeticPracticePageP
       }
     }
 
+    if (kind === 'division') {
+      return {
+        ...base,
+        maxResult,
+      }
+    }
+
     return {
       ...base,
       operandA: table === 0 ? { min: 2, max: 10 } : { min: table, max: table },
@@ -146,6 +168,7 @@ export default function ArithmeticPracticePage({ kind }: ArithmeticPracticePageP
     try {
       const nextQuestions = generateQuestions(buildConfig())
       setQuestions(nextQuestions)
+      setSessionKey((current) => current + 1)
       setError('')
     } catch (cause) {
       setError(
@@ -179,10 +202,15 @@ export default function ArithmeticPracticePage({ kind }: ArithmeticPracticePageP
           </button>
         </div>
         <PracticeSession
+          key={sessionKey}
           questions={questions}
           answerMode={answerMode}
           practiceMode={practiceMode}
           onRestart={startPractice}
+          onComplete={(completedQuestions, answers) =>
+            recordAttempt(kind, completedQuestions, answers)
+          }
+          showFeedback={savedSettings.showAnswersImmediately}
         />
       </div>
     )
@@ -310,6 +338,31 @@ export default function ArithmeticPracticePage({ kind }: ArithmeticPracticePageP
             </Field>
           )}
 
+          {kind === 'division' && (
+            <>
+              <Field label="Số chữ số của số bị chia">
+                <select className={selectClass} value={digitsA} onChange={(event) => setDigitsA(Number(event.target.value))}>
+                  {digitOptions.map((digit) => <option key={digit} value={digit}>{digit} chữ số</option>)}
+                </select>
+              </Field>
+              <Field label="Số chữ số của số chia">
+                <select className={selectClass} value={digitsB} onChange={(event) => setDigitsB(Number(event.target.value))}>
+                  {digitOptions.map((digit) => <option key={digit} value={digit}>{digit} chữ số</option>)}
+                </select>
+              </Field>
+              <Field label="Giới hạn thương tối đa">
+                <input
+                  type="number"
+                  min={0}
+                  max={999_999}
+                  value={maxResult}
+                  onChange={(event) => setMaxResult(Number(event.target.value))}
+                  className={selectClass}
+                />
+              </Field>
+            </>
+          )}
+
           <Field label="Số lượng câu hỏi">
             <select className={selectClass} value={count} onChange={(event) => setCount(Number(event.target.value))}>
               {countOptions.map((option) => <option key={option} value={option}>{option} câu</option>)}
@@ -335,14 +388,14 @@ export default function ArithmeticPracticePage({ kind }: ArithmeticPracticePageP
             {error}
           </p>
         )}
-        <button
-          type="button"
+        <Button
+          size="lg"
           onClick={startPractice}
-          className="mt-6 inline-flex min-h-12 items-center gap-2 rounded-2xl bg-emerald-600 px-5 font-extrabold text-white outline-none transition hover:bg-emerald-700 focus-visible:ring-4 focus-visible:ring-emerald-200"
+          className="mt-6"
         >
           <Play size={18} fill="currentColor" aria-hidden="true" />
           Bắt đầu luyện tập
-        </button>
+        </Button>
       </section>
     </div>
   )

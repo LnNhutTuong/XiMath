@@ -90,10 +90,42 @@ describe('generateQuestions', () => {
       operators: ['×'],
       maxResult: 81,
     })
-
     expect(questions.every(({ answer, operandA, operandB }) => answer === operandA * operandB)).toBe(
       true,
     )
+  })
+
+  it('generates exact division questions with non-zero divisors', () => {
+    const questions = generateQuestions({
+      ...baseConfig,
+      count: 20,
+      operators: ['÷'],
+      operandA: { min: 0, max: 30 },
+      operandB: { min: 0, max: 10 },
+      maxResult: 10,
+    })
+
+    expect(
+      questions.every(
+        ({ operandA, operandB, answer }) =>
+          operandB > 0 &&
+          Number.isInteger(answer) &&
+          operandA / operandB === answer &&
+          answer <= 10,
+      ),
+    ).toBe(true)
+  })
+
+  it('rejects division ranges with no positive divisor', () => {
+    expect(() =>
+      generateQuestions({
+        ...baseConfig,
+        count: 1,
+        operators: ['÷'],
+        operandA: { min: 0, max: 5 },
+        operandB: { min: 0, max: 0 },
+      }),
+    ).toThrow('Không thể tạo phép ÷')
   })
 
   it('can restrict two-digit addition to questions with or without carrying', () => {
@@ -204,6 +236,12 @@ describe('generateQuestions', () => {
   it('rejects a random source outside the expected range', () => {
     expect(() => generateQuestions({ ...baseConfig, count: 1 }, () => 1)).toThrow(
       'Bộ sinh số ngẫu nhiên',
+    )
+  })
+
+  it('rejects excessively large question sets', () => {
+    expect(() => generateQuestions({ ...baseConfig, count: 101 })).toThrow(
+      'Số câu hỏi phải từ 1 đến 100.',
     )
   })
 })

@@ -1,6 +1,7 @@
-import { useState, type FormEvent } from 'react'
+import { useMemo, useState, type FormEvent } from 'react'
 import { ArrowLeft, ArrowRight, CheckCircle2, RefreshCw, Send, Star } from 'lucide-react'
 import type { Question } from '../question-generator/types'
+import { createAnswerChoices } from './answerChoices'
 
 export type AnswerMode = 'choice' | 'input'
 export type PracticeMode = 'practice' | 'test'
@@ -10,15 +11,11 @@ type PracticeSessionProps = {
   answerMode: AnswerMode
   practiceMode: PracticeMode
   onRestart: () => void
-}
-
-function createChoices(answer: number): number[] {
-  const choices = new Set<number>([answer])
-  for (let offset = 1; choices.size < 4; offset += 1) {
-    choices.add(answer + offset)
-    if (answer - offset >= 0) choices.add(answer - offset)
-  }
-  return [...choices].sort(() => Math.random() - 0.5)
+  onComplete: (questions: Question[], answers: Record<string, number>) => boolean | void
+  showFeedback: boolean
+  initialIndex?: number
+  initialAnswers?: Record<string, number>
+  onProgress?: (currentIndex: number, answers: Record<string, number>) => void
 }
 
 export default function PracticeSession({
@@ -26,13 +23,22 @@ export default function PracticeSession({
   answerMode,
   practiceMode,
   onRestart,
+  onComplete,
+  showFeedback,
+  initialIndex = 0,
+  initialAnswers = {},
+  onProgress,
 }: PracticeSessionProps) {
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [answers, setAnswers] = useState<Record<string, number>>({})
+  const [currentIndex, setCurrentIndex] = useState(initialIndex)
+  const [answers, setAnswers] = useState<Record<string, number>>(initialAnswers)
   const [inputValue, setInputValue] = useState('')
   const [isComplete, setIsComplete] = useState(false)
   const [error, setError] = useState('')
   const question = questions[currentIndex]
+  const answerChoices = useMemo(
+    () => createAnswerChoices(question.answer),
+    [question.answer],
+  )
   const response = answers[question.id]
   const isPractice = practiceMode === 'practice'
   const correctCount = questions.reduce(
@@ -43,7 +49,9 @@ export default function PracticeSession({
   const percent = Math.round(((currentIndex + 1) / questions.length) * 100)
 
   function saveAnswer(value: number) {
-    setAnswers((current) => ({ ...current, [question.id]: value }))
+    const nextAnswers = { ...answers, [question.id]: value }
+    setAnswers(nextAnswers)
+    onProgress?.(currentIndex, nextAnswers)
     setError('')
   }
 
@@ -60,6 +68,7 @@ export default function PracticeSession({
 
   function moveTo(index: number) {
     setCurrentIndex(index)
+    onProgress?.(index, answers)
     setInputValue('')
     setError('')
   }
@@ -94,9 +103,8 @@ export default function PracticeSession({
           </div>
         </div>
         <p className="mx-auto mt-3 max-w-lg text-center text-sm text-slate-500">
-          {unansweredCount > 0
-            ? `${unansweredCount} câu chưa trả lời được tính là chưa đúng.`
-            : `${Math.round((correctCount / questions.length) * 100)}% câu trả lời chính xác.`}
+          {Math.round((correctCount / questions.length) * 100)}% câu trả lời chính xác.
+          {unansweredCount > 0 && ` ${unansweredCount} câu chưa trả lời được tính là chưa đúng.`}
         </p>
         <div className="mx-auto mt-7 max-w-2xl space-y-2">
           {questions.map((item, index) => {
@@ -172,7 +180,7 @@ export default function PracticeSession({
 
       {answerMode === 'choice' ? (
         <div className="mx-auto grid max-w-xl grid-cols-2 gap-3">
-          {createChoices(question.answer).map((choice) => {
+          {answerChoices.map((choice) => {
             const selected = response === choice
             const correct = isPractice && selected && choice === question.answer
             const incorrect = isPractice && selected && choice !== question.answer
@@ -183,7 +191,7 @@ export default function PracticeSession({
                 onClick={() => saveAnswer(choice)}
                 aria-pressed={selected}
                 className={[
-                  'min-h-[60px] rounded-2xl border-2 text-xl font-extrabold outline-none focus-visible:ring-4 focus-visible:ring-emerald-200',
+                  'min-h-[60px] rounded-2xl border-2 text-xl font-extrabold outline-none transition duration-150 hover:-translate-y-0.5 active:scale-95 focus-visible:ring-4 focus-visible:ring-emerald-200',
                   correct
                     ? 'border-emerald-400 bg-emerald-50 text-emerald-700'
                     : incorrect
@@ -228,7 +236,7 @@ export default function PracticeSession({
           {error}
         </p>
       )}
-      {isPractice && response !== undefined && (
+      {isPractice && showFeedback && response !== undefined && (
         <p
           role="status"
           className={`mt-4 flex items-center justify-center gap-2 text-sm font-bold ${
@@ -245,7 +253,7 @@ export default function PracticeSession({
           )}
         </p>
       )}
-      {isPractice && answerMode === 'input' && response !== undefined && response !== question.answer && (
+      {isPractice && showFeedback && answerMode === 'input' && response !== undefined && response !== question.answer && (
         <p className="mt-2 text-center text-sm text-slate-500">
           Gợi ý: đáp án đúng là {question.answer}.
         </p>
@@ -276,7 +284,9 @@ export default function PracticeSession({
         ) : (
           <button
             type="button"
-            onClick={() => setIsComplete(true)}
+            onClick={() => {
+              if (onComplete(questions, answers) !== false) setIsComplete(true)
+            }}
             className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-emerald-600 px-4 font-bold text-white outline-none hover:bg-emerald-700 focus-visible:ring-4 focus-visible:ring-emerald-200"
           >
             Nộp bài

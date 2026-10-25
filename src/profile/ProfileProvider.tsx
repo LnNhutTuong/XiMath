@@ -1,8 +1,9 @@
 import { useState, type ReactNode } from 'react'
 import { ProfileContext } from './profileContext'
-
-const PROFILE_KEY = 'ximath.profile.v1'
-const MAX_NAME_LENGTH = 24
+import {
+  readDisplayName,
+  saveDisplayName,
+} from './profileStore'
 
 type StoredProfile = {
   name: string
@@ -11,10 +12,9 @@ type StoredProfile = {
 
 function readProfile(): StoredProfile {
   if (typeof window === 'undefined') return { name: '', error: '' }
-
   try {
-    const name = window.localStorage.getItem(PROFILE_KEY)?.trim().slice(0, MAX_NAME_LENGTH)
-    return { name: name ?? '', error: '' }
+    const result = readDisplayName(window.localStorage)
+    return { name: result.value, error: result.error }
   } catch {
     return {
       name: '',
@@ -27,23 +27,21 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState(readProfile)
 
   function saveName(value: string): boolean {
-    const name = value.trim().slice(0, MAX_NAME_LENGTH)
-    if (!name) {
-      setProfile((current) => ({ ...current, error: 'Em hãy nhập tên trước nhé.' }))
-      return false
-    }
-
+    let result: ReturnType<typeof saveDisplayName>
     try {
-      window.localStorage.setItem(PROFILE_KEY, name)
+      result = saveDisplayName(window.localStorage, value)
     } catch {
-      setProfile((current) => ({
-        ...current,
-        error: 'Chưa lưu được tên. Em hãy kiểm tra dung lượng hoặc cài đặt trình duyệt nhé.',
-      }))
+      result = {
+        value: '',
+        error: 'Chưa lưu được tên. Em hãy kiểm tra cài đặt bộ nhớ trình duyệt nhé.',
+      }
+    }
+    if (result.error) {
+      setProfile((current) => ({ ...current, error: result.error }))
       return false
     }
 
-    setProfile({ name, error: '' })
+    setProfile({ name: result.value, error: '' })
     return true
   }
 
