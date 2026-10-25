@@ -65,7 +65,7 @@ export default function AppLayout() {
           <div className="mb-2 text-2xl" aria-hidden="true">
             🌈
           </div>
-          <p className="text-sm font-bold text-slate-700">Con học thật vui nhé!</p>
+          <p className="text-sm font-bold text-slate-700">Em học thật vui nhé!</p>
           <p className="mt-1 text-xs leading-5 text-slate-500">
             Mỗi phép tính nhỏ là một bước tiến lớn.
           </p>

@@ -17,7 +17,7 @@ export default function ComingSoonPage() {
       </h1>
       <p className="mt-3 max-w-sm text-sm leading-6 text-slate-500">
         {currentPage
-          ? 'Góc học này đang được chuẩn bị thật vui. Con có thể quay lại trang chủ để chọn bài học khác nhé!'
+          ? 'Góc học này đang được chuẩn bị thật vui. Em có thể quay lại trang chủ để chọn bài học khác nhé!'
           : 'Mình chưa tìm thấy trang này. Cùng quay về trang chủ nhé!'}
       </p>
       <Link
